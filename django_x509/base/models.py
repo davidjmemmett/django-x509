@@ -28,7 +28,6 @@ from cryptography.x509 import (
     RevokedCertificateBuilder,
     SubjectKeyIdentifier,
 )
-from cryptography.x509.oid import CRLEntryExtensionOID, ExtensionOID, NameOID
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
@@ -39,6 +38,8 @@ from jsonfield import JSONField
 from model_utils.fields import AutoCreatedField, AutoLastModifiedField
 
 from .. import settings as app_settings
+from django_x509.base.oids import NetscapeOID, KNOWN_OIDS
+from cryptography.hazmat.bindings._rust import ObjectIdentifier
 
 generalized_time = '%Y%m%d%H%M%SZ'
 utc_time = '%y%m%d%H%M%SZ'
@@ -533,11 +534,16 @@ class BaseX509(models.Model):
 
         # Custom extensions defined in self.extensions
         for ext in self.extensions:
-            ext_oid = ExtensionOID._map.get(ext['name']) or ext['name']
+            
+            ext_oid = KNOWN_OIDS.get(ext['name'])
+            
+            if ext_oid is None and 'oid' in ext:
+                ext_oid = ObjectIdentifier(ext['oid'])
+            
             extensions.append(
                 (
                     x509.UnrecognizedExtension(
-                        x509.ObjectIdentifier(ext_oid),
+                        ext_oid,
                         str(ext['value']).encode('utf-8'),
                     ),
                     bool(ext['critical']),

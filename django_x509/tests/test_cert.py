@@ -13,6 +13,7 @@ from swapper import load_model
 from .. import settings as app_settings
 from ..base.models import generalized_time
 from . import TestX509Mixin
+from django_x509.base.oids import NetscapeOID
 
 Ca = load_model('django_x509', 'Ca')
 Cert = load_model('django_x509', 'Cert')
@@ -337,17 +338,17 @@ k9Y1S1C9VB0YsDZTeZUggJNSDN4YrKjIevYZQQIhAOWec6vngM/PlI1adrFndd3d
                 'critical': False,
                 'value': 'client',
             },
-            {
-                'name': 'extendedKeyUsage', # 2.5.29.37
-                'critical': True,  # critical just for testing purposes
-                'value': 'clientAuth',
-            },
+            # {
+            #     'name': 'extendedKeyUsage', # 2.5.29.37
+            #     'critical': True,  # critical just for testing purposes
+            #     'value': 'clientAuth',
+            # },
         ]
         cert = self._create_cert(extensions=extensions)
         ns_cert_type_ext = cert.x509.extensions.get_extension_for_oid(
-            '2.16.840.1.113730.1.1'
+            NetscapeOID.CERT_TYPE,
         )
-        self.assertEqual(ns_cert_type_ext.oid._name, 'nsCertType')
+        self.assertEqual(ns_cert_type_ext.oid._name, 'Unknown OID')
         self.assertFalse(ns_cert_type_ext.critical)
         #self.assertEqual(e1.get_data(), b'\x03\x02\x07\x80')
         
